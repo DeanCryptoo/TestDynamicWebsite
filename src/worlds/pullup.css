@@ -382,7 +382,7 @@ body[data-world='pullup'] #app {
 }
 
 .pullup-events {
-  min-height: 145vh;
+  min-height: 178vh;
 }
 
 .pullup-events__shell {
@@ -508,7 +508,7 @@ body[data-world='pullup'] #app {
 }
 
 .pullup-movement {
-  min-height: 140vh;
+  min-height: 176vh;
 }
 
 .pullup-movement__grid {

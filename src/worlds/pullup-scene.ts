@@ -163,6 +163,7 @@ export class PullupScene {
 
   private readonly contactRings: PulseRing[] = []
   private readonly eventBursts: PulseRing[] = []
+  private readonly movementBursts: PulseRing[] = []
   private readonly movementMicrophones: MicrophoneInstance[] = []
   private readonly eventBottles: MicrophoneInstance[] = []
   private readonly galleryDiscoBalls: MicrophoneInstance[] = []
@@ -283,6 +284,30 @@ export class PullupScene {
         phase: config.phase,
         spin: config.spin,
         rotationX: Math.PI * 0.18,
+      })
+    }
+
+    const movementBurstConfigs = this.lowPower
+      ? [
+          { x: -0.18, y: 0.24, z: -4.6, scale: 1.24, color: '#53d2ff', phase: 0.3, spin: 0.04, rotationX: Math.PI * 0.36 },
+          { x: -0.08, y: 0.54, z: -5.3, scale: 1.76, color: '#d9fbff', phase: 1.2, spin: -0.03, rotationX: Math.PI * 0.46 },
+        ]
+      : [
+          { x: -0.26, y: 0.18, z: -4.82, scale: 1.18, color: '#53d2ff', phase: 0.3, spin: 0.04, rotationX: Math.PI * 0.34 },
+          { x: 0.04, y: 0.46, z: -5.54, scale: 1.72, color: '#d9fbff', phase: 1.2, spin: -0.03, rotationX: Math.PI * 0.44 },
+          { x: 0.28, y: 0.8, z: -6.18, scale: 2.22, color: '#8ddfff', phase: 2.1, spin: 0.02, rotationX: Math.PI * 0.52 },
+        ]
+
+    for (const config of movementBurstConfigs) {
+      this.addPulseRing(this.movementStageRoot, this.movementBursts, {
+        x: config.x,
+        y: config.y,
+        z: config.z,
+        baseScale: config.scale,
+        color: config.color,
+        phase: config.phase,
+        spin: config.spin,
+        rotationX: config.rotationX,
       })
     }
 
@@ -442,9 +467,9 @@ export class PullupScene {
     const presence = MathUtils.clamp(introWeight * 1.28 + (1 - travel) * 0.06, 0, 1)
     const arc = Math.sin(travel * Math.PI)
     this.introStageRoot.position.set(
-      0.98 + pointer.x * 0.12,
-      -0.72 + pointer.y * 0.04 + travel * 0.08,
-      -6.98 - travel * 0.74,
+      0.62 + pointer.x * 0.12,
+      -0.62 + pointer.y * 0.04 + travel * 0.06,
+      -6.64 - travel * 0.58,
     )
     this.introStageRoot.rotation.y = 0.06 + pointer.x * 0.04 - travel * 0.1
     this.introStageRoot.rotation.z = -0.03 + arc * 0.03
@@ -464,26 +489,34 @@ export class PullupScene {
         easeOut: easeInOutCubic,
         fadeInEnd: 0.22,
         fadeInStart: 0.04,
-        fadeOutEnd: 0.94,
-        fadeOutStart: 0.6,
+        fadeOutEnd: 0.985,
+        fadeOutStart: 0.82,
       })
       const motionBand = createTimelineEnvelope(float, {
         easeIn: easeInOutCubic,
         easeOut: easeInOutCubic,
         fadeInEnd: 0.3,
         fadeInStart: 0.08,
-        fadeOutEnd: 0.8,
-        fadeOutStart: 0.44,
+        fadeOutEnd: 0.96,
+        fadeOutStart: 0.74,
       })
-      const exitRetreat = createChapterProgress(float, 0.66, 0.96, easeInOutCubic)
+      const burst = createChapterProgress(float, 0.2, 0.82, easeOutQuint)
+      const exitRetreat = createChapterProgress(float, 0.72, 0.98, easeInOutCubic)
+      const helium = createPulseValue(time, envelope, {
+        amplitude: 0.28,
+        base: 0.38,
+        frequency: 0.54 + index * 0.06,
+        phase: balloon.phase,
+        progressGain: 0.2,
+      })
       const orbit = createOrbitOffset(float, {
         phase: balloon.phase * 0.06,
-        radiusX: 0.08 + index * 0.04,
-        radiusY: 0.04 + index * 0.03,
-        turns: 0.16,
+        radiusX: 0.1 + index * 0.05,
+        radiusY: 0.06 + index * 0.04,
+        turns: 0.2,
       })
       const spread = createFanOffset(float, index, this.introBalloons.length, {
-        spread: 0.92,
+        spread: 0.58,
         curve: 0.8,
         ease: easeOutQuint,
       })
@@ -497,18 +530,16 @@ export class PullupScene {
       this.setModelOpacity(balloon.group, 0.02 + presence * envelope * 0.94)
       this.animateMicrophonePalette(balloon, time, presence, float)
       balloon.group.position.set(
-        balloon.baseX + spread * 0.14 * motionBand + orbit.x * motionBand,
-        balloon.baseY + (float * 0.12 + orbit.y + lift) * motionBand + exitRetreat * 0.08,
-        balloon.baseZ - float * (0.18 + envelope * 0.24) - exitRetreat * 0.18,
+        balloon.baseX + spread * 0.08 * motionBand + orbit.x * motionBand * 0.82 + helium * 0.08,
+        balloon.baseY + (orbit.y + lift) * motionBand + burst * 0.14 + exitRetreat * 0.1 + helium * 0.22,
+        balloon.baseZ - burst * 0.48 - exitRetreat * 0.14 + Math.sin(time * 0.24 + balloon.phase) * 0.06,
       )
       balloon.group.rotation.set(
-        balloon.baseRotX + lift * 0.12 * motionBand,
-        balloon.baseRotY + (spread * 0.05 + orbit.x * 0.08) * motionBand,
-        balloon.baseRotZ + lift * 0.14 * motionBand,
+        balloon.baseRotX + lift * 0.08 * motionBand + helium * 0.04,
+        balloon.baseRotY + (spread * 0.03 + orbit.x * 0.04) * motionBand,
+        balloon.baseRotZ + lift * 0.08 * motionBand + Math.sin(time * 0.38 + balloon.phase) * 0.05 * envelope,
       )
-      balloon.group.scale.setScalar(
-        balloon.scale * envelope * (0.96 + motionBand * 0.08 + presence * 0.08 - exitRetreat * 0.08),
-      )
+      balloon.group.scale.setScalar(balloon.scale * envelope * (1.02 + presence * 0.04))
     }
   }
 
@@ -543,18 +574,19 @@ export class PullupScene {
         easeOut: easeInOutCubic,
         fadeInEnd: 0.24,
         fadeInStart: 0.05,
-        fadeOutEnd: 0.94,
-        fadeOutStart: 0.62,
+        fadeOutEnd: 0.985,
+        fadeOutStart: 0.84,
       })
       const motionBand = createTimelineEnvelope(pass, {
         easeIn: easeInOutCubic,
         easeOut: easeInOutCubic,
         fadeInEnd: 0.34,
         fadeInStart: 0.08,
-        fadeOutEnd: 0.8,
-        fadeOutStart: 0.42,
+        fadeOutEnd: 0.965,
+        fadeOutStart: 0.76,
       })
-      const exitRetreat = createChapterProgress(pass, 0.64, 0.96, easeInOutCubic)
+      const burst = createChapterProgress(pass, 0.16, 0.84, easeOutQuint)
+      const exitRetreat = createChapterProgress(pass, 0.76, 0.99, easeInOutCubic)
       const arc = Math.sin(pass * Math.PI)
       const spread = createFanOffset(pass, index, this.eventBottles.length, {
         spread: 1.28,
@@ -577,18 +609,16 @@ export class PullupScene {
       this.setModelOpacity(bottle.group, 0.02 + presence * envelope * 0.98)
       this.animateMicrophonePalette(bottle, time, presence, pass)
       bottle.group.position.set(
-        bottle.baseX + spread * 0.08 * motionBand + orbit.x * 0.68 * motionBand,
-        bottle.baseY + (arc * 0.11 + lift) * motionBand + exitRetreat * 0.12,
-        bottle.baseZ + pass * (0.82 + envelope * 0.56) - exitRetreat * 0.24,
+        bottle.baseX + spread * 0.06 * motionBand + orbit.x * 0.5 * motionBand,
+        bottle.baseY + (arc * 0.08 + lift) * motionBand + burst * 0.16 + exitRetreat * 0.08,
+        bottle.baseZ + burst * 0.92 - exitRetreat * 0.16,
       )
       bottle.group.rotation.set(
-        bottle.baseRotX + (pass * 0.12 - arc * 0.03) * motionBand,
+        bottle.baseRotX + (burst * 0.06 - arc * 0.02) * motionBand,
         bottle.baseRotY + (spread * 0.03 + orbit.x * 0.04) * motionBand,
         bottle.baseRotZ + (spread * 0.03 + arc * 0.02) * motionBand,
       )
-      bottle.group.scale.setScalar(
-        bottle.scale * envelope * (0.92 + presence * 0.1 + motionBand * 0.1 - exitRetreat * 0.06),
-      )
+      bottle.group.scale.setScalar(bottle.scale * envelope * (1.04 + presence * 0.04))
     }
 
     const burstEnvelope = createTimelineEnvelope(travel, {
@@ -596,8 +626,8 @@ export class PullupScene {
       easeOut: easeOutQuint,
       fadeInEnd: 0.22,
       fadeInStart: 0.08,
-      fadeOutEnd: 0.96,
-      fadeOutStart: 0.58,
+      fadeOutEnd: 0.985,
+      fadeOutStart: 0.78,
     })
 
     for (const ring of this.eventBursts) {
@@ -610,7 +640,7 @@ export class PullupScene {
       })
       ring.mesh.position.set(ring.baseX, ring.baseY, ring.baseZ - travel * 0.48)
       ring.mesh.rotation.set(ring.rotationX, 0, time * ring.spin + ring.phase * 0.8)
-      ring.mesh.scale.setScalar(ring.baseScale * (0.68 + burstEnvelope * 0.74 + pulse * 0.34))
+      ring.mesh.scale.setScalar(ring.baseScale * (0.82 + burstEnvelope * 0.92 + pulse * 0.42))
       ring.material.opacity = presence * burstEnvelope * (0.04 + pulse * 0.24)
     }
   }
@@ -625,11 +655,12 @@ export class PullupScene {
     const travel = softenTimelineTail(timeline, { tailStart: 0.56, cap: 0.8, ease: easeOutQuint })
     const presence = MathUtils.clamp(movementWeight * 1.46 + travel * 0.12, 0, 1)
     this.movementStageRoot.position.set(
-      0.04 + pointer.x * 0.06,
-      -1.54 + pointer.y * 0.03 + travel * 0.1,
-      -5.8 + travel * 0.42,
+      -0.08 + pointer.x * 0.08,
+      -1.42 + pointer.y * 0.04 + travel * 0.14,
+      -5.96 + travel * 0.48,
     )
-    this.movementStageRoot.rotation.y = -0.06 + pointer.x * 0.04 + travel * 0.12
+    this.movementStageRoot.rotation.y = -0.09 + pointer.x * 0.05 + travel * 0.16
+    this.movementStageRoot.rotation.x = Math.sin(time * 0.22) * 0.02
 
     for (let index = 0; index < this.movementMicrophones.length; index += 1) {
       const mic = this.movementMicrophones[index]
@@ -646,22 +677,29 @@ export class PullupScene {
         easeOut: easeInOutCubic,
         fadeInEnd: 0.22,
         fadeInStart: 0.05,
-        fadeOutEnd: 0.96,
-        fadeOutStart: 0.68,
+        fadeOutEnd: 0.988,
+        fadeOutStart: 0.86,
       })
       const motionBand = createTimelineEnvelope(rise, {
         easeIn: easeInOutCubic,
         easeOut: easeInOutCubic,
         fadeInEnd: 0.32,
         fadeInStart: 0.08,
-        fadeOutEnd: 0.82,
-        fadeOutStart: 0.48,
+        fadeOutEnd: 0.972,
+        fadeOutStart: 0.8,
       })
-      const exitRetreat = createChapterProgress(rise, 0.68, 0.98, easeInOutCubic)
+      const burst = createChapterProgress(rise, 0.14, 0.82, easeOutQuint)
+      const exitRetreat = createChapterProgress(rise, 0.8, 0.99, easeInOutCubic)
       const arc = Math.sin(rise * Math.PI)
+      const spiral = createOrbitOffset(rise, {
+        phase: mic.phase * 0.04,
+        radiusX: 0.1 + Math.abs(mic.baseX) * 0.02,
+        radiusY: 0.1 + Math.abs(mic.baseX) * 0.02,
+        turns: Math.abs(mic.baseX) < 0.2 ? 0.04 : 0.14,
+      })
       const fan = createFanOffset(rise, index, this.movementMicrophones.length, {
-        spread: 0.72,
-        curve: 0.86,
+        spread: 0.58,
+        curve: 0.92,
         ease: easeInOutCubic,
       })
       const ambient = createFloatMotion(time, rise, {
@@ -673,21 +711,50 @@ export class PullupScene {
       })
       this.setModelOpacity(mic.group, 0.02 + presence * envelope * 0.98)
       this.animateMicrophonePalette(mic, time, presence, rise)
+      const centerWeight = Math.abs(mic.baseX) < 0.2 ? 1 : 0
+      const sway = Math.sin(time * (0.56 + index * 0.04) + mic.phase) * (centerWeight ? 0.04 : 0.08)
       mic.group.position.set(
-        mic.baseX * (1 + rise * 0.04 * motionBand) + fan * 0.1 * motionBand,
+        mic.baseX * (1 + burst * (centerWeight ? 0.03 : 0.08)) + fan * 0.08 * motionBand + spiral.x * motionBand,
         mic.baseY +
-          (rise * (0.28 + Math.abs(mic.baseX) * 0.04) + arc * mic.drift * 0.18 + ambient) * motionBand +
-          exitRetreat * 0.1,
-        mic.baseZ - rise * (0.3 + envelope * 0.2) - exitRetreat * 0.14,
+          (arc * mic.drift * (centerWeight ? 0.08 : 0.18) + ambient + sway) * motionBand +
+          burst * (centerWeight ? 0.18 : 0.34 + Math.abs(mic.baseX) * 0.04) +
+          spiral.y * motionBand +
+          exitRetreat * 0.06,
+        mic.baseZ - burst * (centerWeight ? 0.22 : 0.52) - exitRetreat * 0.08 - Math.abs(fan) * 0.04,
       )
       mic.group.rotation.set(
-        mic.baseRotX + rise * 0.2 * motionBand,
-        mic.baseRotY + ((index % 2 === 0 ? -1 : 1) * arc * 0.05 + fan * 0.04) * motionBand,
-        mic.baseRotZ + ((index % 2 === 0 ? -1 : 1) * rise * 0.06 + fan * 0.03) * motionBand,
+        mic.baseRotX + burst * (centerWeight ? 0.02 : 0.06) * motionBand,
+        mic.baseRotY + ((index % 2 === 0 ? -1 : 1) * arc * 0.05 + fan * 0.04 + spiral.x * (centerWeight ? 0.02 : 0.05)) * motionBand,
+        mic.baseRotZ + ((index % 2 === 0 ? -1 : 1) * rise * (centerWeight ? 0.02 : 0.06) + fan * 0.03 + spiral.y * (centerWeight ? 0.02 : 0.06)) * motionBand,
       )
-      mic.group.scale.setScalar(
-        mic.scale * envelope * (0.9 + presence * 0.14 + motionBand * 0.12 - exitRetreat * 0.04),
+      mic.group.scale.setScalar(mic.scale * envelope * (centerWeight ? 1.08 : 1.02 + presence * 0.04))
+    }
+
+    const movementPulse = createTimelineEnvelope(travel, {
+      easeIn: easeOutQuint,
+      easeOut: easeOutQuint,
+      fadeInEnd: 0.24,
+      fadeInStart: 0.08,
+      fadeOutEnd: 0.99,
+      fadeOutStart: 0.84,
+    })
+
+    for (const ring of this.movementBursts) {
+      const wave = createPulseValue(time, movementPulse, {
+        amplitude: 0.78,
+        base: 0.4,
+        frequency: 0.84 + ring.phase * 0.05,
+        phase: ring.phase,
+        progressGain: 0.3,
+      })
+      ring.mesh.position.set(
+        ring.baseX + Math.sin(time * 0.2 + ring.phase) * 0.12,
+        ring.baseY + travel * 0.1,
+        ring.baseZ - travel * 0.42,
       )
+      ring.mesh.rotation.set(ring.rotationX, 0, time * ring.spin + ring.phase * 0.8)
+      ring.mesh.scale.setScalar(ring.baseScale * (0.86 + movementPulse * 0.72 + wave * 0.36))
+      ring.material.opacity = presence * movementPulse * (0.03 + wave * 0.2)
     }
   }
 
@@ -722,18 +789,19 @@ export class PullupScene {
         easeOut: easeInOutCubic,
         fadeInEnd: 0.22,
         fadeInStart: 0.05,
-        fadeOutEnd: 0.96,
-        fadeOutStart: 0.7,
+        fadeOutEnd: 0.988,
+        fadeOutStart: 0.86,
       })
       const motionBand = createTimelineEnvelope(hang, {
         easeIn: easeInOutCubic,
         easeOut: easeInOutCubic,
         fadeInEnd: 0.32,
         fadeInStart: 0.08,
-        fadeOutEnd: 0.82,
-        fadeOutStart: 0.48,
+        fadeOutEnd: 0.972,
+        fadeOutStart: 0.8,
       })
-      const exitRetreat = createChapterProgress(hang, 0.68, 0.98, easeInOutCubic)
+      const burst = createChapterProgress(hang, 0.18, 0.84, easeOutQuint)
+      const exitRetreat = createChapterProgress(hang, 0.82, 0.99, easeInOutCubic)
       const drift = createFanOffset(hang, index, this.galleryDiscoBalls.length, {
         spread: 0.66,
         curve: 0.74,
@@ -755,18 +823,16 @@ export class PullupScene {
       this.setModelOpacity(discoBall.group, 0.02 + presence * envelope * 0.98)
       this.animateMicrophonePalette(discoBall, time, presence, hang)
       discoBall.group.position.set(
-        discoBall.baseX + drift * 0.08 * motionBand + orbit.x * 0.72 * motionBand,
-        discoBall.baseY - hang * 0.12 * motionBand + orbit.y * motionBand + bob * motionBand + exitRetreat * 0.1,
-        discoBall.baseZ - hang * (0.22 + envelope * 0.24) - exitRetreat * 0.12,
+        discoBall.baseX + drift * 0.06 * motionBand + orbit.x * 0.58 * motionBand,
+        discoBall.baseY + orbit.y * motionBand + bob * motionBand + burst * 0.12 + exitRetreat * 0.08,
+        discoBall.baseZ - burst * 0.28 - exitRetreat * 0.06,
       )
       discoBall.group.rotation.set(
         discoBall.baseRotX + hang * 0.04 * motionBand,
         discoBall.baseRotY + time * (0.28 + index * 0.03) * envelope + drift * 0.04 * motionBand,
         discoBall.baseRotZ + orbit.x * 0.08 * motionBand,
       )
-      discoBall.group.scale.setScalar(
-        discoBall.scale * envelope * (0.94 + presence * 0.12 + motionBand * 0.1 - exitRetreat * 0.05),
-      )
+      discoBall.group.scale.setScalar(discoBall.scale * envelope * (1.03 + presence * 0.04))
     }
   }
 
@@ -804,18 +870,19 @@ export class PullupScene {
         easeOut: easeInOutCubic,
         fadeInEnd: 0.22,
         fadeInStart: 0.05,
-        fadeOutEnd: 0.96,
-        fadeOutStart: 0.72,
+        fadeOutEnd: 0.988,
+        fadeOutStart: 0.88,
       })
       const motionBand = createTimelineEnvelope(cheers, {
         easeIn: easeInOutCubic,
         easeOut: easeInOutCubic,
         fadeInEnd: 0.32,
         fadeInStart: 0.08,
-        fadeOutEnd: 0.82,
-        fadeOutStart: 0.5,
+        fadeOutEnd: 0.972,
+        fadeOutStart: 0.82,
       })
-      const exitRetreat = createChapterProgress(cheers, 0.7, 0.99, easeInOutCubic)
+      const burst = createChapterProgress(cheers, 0.18, 0.86, easeOutQuint)
+      const exitRetreat = createChapterProgress(cheers, 0.82, 0.99, easeInOutCubic)
       const arc = Math.sin(cheers * Math.PI)
       const toastSpread = createFanOffset(cheers, index, this.contactMartinis.length, {
         spread: this.lowPower ? 0.84 : 1.08,
@@ -839,18 +906,16 @@ export class PullupScene {
       this.setModelOpacity(martini.group, 0.02 + presence * envelope * 0.94)
       this.animateMicrophonePalette(martini, time, presence, cheers)
       martini.group.position.set(
-        martini.baseX + toastSpread * 0.08 * motionBand + orbit.x * 0.72 * motionBand,
-        martini.baseY + (arc * 0.12 + ambient + Math.abs(toastSpread) * 0.02) * motionBand + exitRetreat * 0.1,
-        martini.baseZ - cheers * (0.18 + envelope * 0.14) - exitRetreat * 0.1,
+        martini.baseX + toastSpread * 0.06 * motionBand + orbit.x * 0.56 * motionBand,
+        martini.baseY + (arc * 0.1 + ambient + Math.abs(toastSpread) * 0.02) * motionBand + burst * 0.16 + exitRetreat * 0.08,
+        martini.baseZ - burst * 0.24 - exitRetreat * 0.06,
       )
       martini.group.rotation.set(
         martini.baseRotX + arc * 0.05 * motionBand,
         martini.baseRotY + (toastSpread * 0.04 + orbit.x * 0.06) * motionBand,
         martini.baseRotZ + (sway + orbit.y * 0.08) * motionBand,
       )
-      martini.group.scale.setScalar(
-        martini.scale * envelope * (0.94 + motionBand * 0.08 + presence * 0.1 - exitRetreat * 0.05),
-      )
+      martini.group.scale.setScalar(martini.scale * envelope * (1.04 + presence * 0.04))
     }
 
     for (const ring of this.contactRings) {
@@ -859,8 +924,8 @@ export class PullupScene {
         easeOut: easeOutQuint,
         fadeInEnd: 0.18,
         fadeInStart: 0.04,
-        fadeOutEnd: 0.98,
-        fadeOutStart: 0.82,
+        fadeOutEnd: 0.992,
+        fadeOutStart: 0.9,
       })
       const pulse = createPulseValue(time, ringEnvelope, {
         amplitude: 0.68,
@@ -1137,14 +1202,14 @@ export class PullupScene {
       case 'movement':
         return {
           cameraTarget: new Vector3(
-            this.movementAnchor.x + 0.08 + pointer.x * 0.1,
-            this.movementAnchor.y + 0.58 + pointer.y * 0.06,
-            this.movementAnchor.z + 6.6 - movementTravel * 0.34,
+            this.movementAnchor.x - 0.18 + pointer.x * 0.14,
+            this.movementAnchor.y + 0.74 + pointer.y * 0.08,
+            this.movementAnchor.z + 6.9 - movementTravel * 0.52,
           ),
           look: new Vector3(
-            this.movementAnchor.x,
-            this.movementAnchor.y + 0.1,
-            this.movementAnchor.z - 5.6,
+            this.movementAnchor.x + 0.08,
+            this.movementAnchor.y + 0.24,
+            this.movementAnchor.z - 5.9,
           ),
           fogColor: '#071018',
           fogDensity: 0.031,
@@ -1199,32 +1264,45 @@ export class PullupScene {
     try {
       const template = this.normalizeObject(
         await this.loadGlb(MICROPHONE_MODEL_URL),
-        this.lowPower ? 0.28 : 0.36,
+        this.lowPower ? 0.42 : 0.54,
         { z: Math.PI },
       )
 
-      const movementX = this.lowPower ? [-1.7, -0.85, 0, 0.85, 1.7] : [-2.4, -1.6, -0.8, 0, 0.8, 1.6, 2.4]
-      for (let index = 0; index < movementX.length; index += 1) {
-        const x = movementX[index]
+      const movementConfigs = this.lowPower
+        ? [
+            { x: -1.05, y: -0.16, z: -2.48, rotY: -0.18, rotZ: -0.08, scale: 0.34, phase: 0.2, drift: 0.09 },
+            { x: 0, y: 0.08, z: -3.12, rotY: 0, rotZ: 0, scale: 0.46, phase: 0.92, drift: 0.12 },
+            { x: 1.08, y: -0.06, z: -2.62, rotY: 0.16, rotZ: 0.08, scale: 0.34, phase: 1.64, drift: 0.09 },
+          ]
+        : [
+            { x: -1.9, y: -0.2, z: -2.84, rotY: -0.24, rotZ: -0.12, scale: 0.34, phase: 0.18, drift: 0.08 },
+            { x: -0.78, y: 0.12, z: -3.46, rotY: -0.08, rotZ: -0.03, scale: 0.28, phase: 0.76, drift: 0.1 },
+            { x: 0, y: 0.32, z: -4.08, rotY: 0, rotZ: 0, scale: 0.5, phase: 1.34, drift: 0.14 },
+            { x: 0.84, y: 0.08, z: -3.38, rotY: 0.08, rotZ: 0.04, scale: 0.28, phase: 1.92, drift: 0.1 },
+            { x: 1.98, y: -0.18, z: -2.76, rotY: 0.24, rotZ: 0.12, scale: 0.34, phase: 2.48, drift: 0.08 },
+          ]
+
+      for (let index = 0; index < movementConfigs.length; index += 1) {
+        const config = movementConfigs[index]
         this.addMicrophone(this.movementStageRoot, this.movementMicrophones, template, {
-          baseX: x * 0.88,
-          baseY: -0.12 + (Math.abs(x) < 0.2 ? 0.06 : 0),
-          baseZ: -2.15 - Math.abs(x) * 0.34,
-          baseRotY: x * 0.03,
-          baseRotZ: x * 0.01,
-          phase: index * 0.7,
-          scale: Math.abs(x) < 0.2 ? 0.28 : 0.22,
-          drift: 0.08 + Math.abs(x) * 0.015,
+          baseX: config.x,
+          baseY: config.y,
+          baseZ: config.z,
+          baseRotY: config.rotY,
+          baseRotZ: config.rotZ,
+          phase: config.phase,
+          scale: config.scale,
+          drift: config.drift,
           palette: {
-            base: '#edf7fb',
-            emissive: '#50cfff',
-            accent: '#b4f3ff',
-            roughness: 0.36,
-            metalness: 0.58,
+            base: index === Math.floor(movementConfigs.length / 2) ? '#f5fbff' : '#e4f3fb',
+            emissive: index === Math.floor(movementConfigs.length / 2) ? '#92e7ff' : '#50cfff',
+            accent: index === Math.floor(movementConfigs.length / 2) ? '#d9fbff' : '#b4f3ff',
+            roughness: index === Math.floor(movementConfigs.length / 2) ? 0.3 : 0.36,
+            metalness: index === Math.floor(movementConfigs.length / 2) ? 0.64 : 0.58,
             clearcoat: 0.72,
             clearcoatRoughness: 0.16,
-            emissiveIntensity: 0.09,
-            specularIntensity: 0.96,
+            emissiveIntensity: index === Math.floor(movementConfigs.length / 2) ? 0.12 : 0.09,
+            specularIntensity: index === Math.floor(movementConfigs.length / 2) ? 1.04 : 0.96,
           },
         })
       }
@@ -1237,18 +1315,18 @@ export class PullupScene {
     try {
       const template = this.normalizeObject(
         await this.loadGlb(MARTINI_MODEL_URL),
-        this.lowPower ? 0.58 : 0.72,
+        this.lowPower ? 0.72 : 0.9,
       )
 
       const contactConfigs = this.lowPower
         ? [
-            { x: -0.94, y: 0.44, z: -3.04, rotY: 0.12, rotZ: -0.14, scale: 0.26, phase: 1.8 },
-            { x: 0.96, y: 0.52, z: -3.24, rotY: -0.12, rotZ: 0.14, scale: 0.26, phase: 2.5 },
+            { x: -0.94, y: 0.44, z: -3.04, rotY: 0.12, rotZ: -0.14, scale: 0.34, phase: 1.8 },
+            { x: 0.96, y: 0.52, z: -3.24, rotY: -0.12, rotZ: 0.14, scale: 0.34, phase: 2.5 },
           ]
         : [
-            { x: -1.34, y: 0.4, z: -3.08, rotY: 0.16, rotZ: -0.16, scale: 0.25, phase: 1.8 },
-            { x: 0.04, y: 0.92, z: -3.64, rotY: 0, rotZ: 0.04, scale: 0.3, phase: 2.5 },
-            { x: 1.42, y: 0.46, z: -3.1, rotY: -0.16, rotZ: 0.16, scale: 0.25, phase: 3.2 },
+            { x: -1.34, y: 0.4, z: -3.08, rotY: 0.16, rotZ: -0.16, scale: 0.36, phase: 1.8 },
+            { x: 0.04, y: 0.92, z: -3.64, rotY: 0, rotZ: 0.04, scale: 0.42, phase: 2.5 },
+            { x: 1.42, y: 0.46, z: -3.1, rotY: -0.16, rotZ: 0.16, scale: 0.36, phase: 3.2 },
           ]
 
       for (let index = 0; index < contactConfigs.length; index += 1) {
@@ -1289,13 +1367,13 @@ export class PullupScene {
     try {
       const template = this.normalizeObject(
         await this.loadGlb(BALLOON_MODEL_URL),
-        0.48,
+        0.72,
       )
 
       const introConfigs = [
-        { x: 1.22, y: 1.62, z: -6.26, rotY: 0.08, scale: 0.35, phase: 0.2, accent: '#fff3b0' },
-        { x: 2.02, y: 1.34, z: -6.94, rotY: -0.1, scale: 0.31, phase: 0.9, accent: '#ffd7f3' },
-        { x: 2.76, y: 1.06, z: -7.56, rotY: 0.06, scale: 0.28, phase: 1.6, accent: '#d9ff49' },
+        { x: 0.4, y: 1.44, z: -5.78, rotY: 0.08, scale: 0.58, phase: 0.2, accent: '#fff3b0' },
+        { x: 1.16, y: 1.16, z: -6.18, rotY: -0.1, scale: 0.52, phase: 0.9, accent: '#ffd7f3' },
+        { x: 1.88, y: 0.94, z: -6.62, rotY: 0.06, scale: 0.48, phase: 1.6, accent: '#d9ff49' },
       ]
 
       for (const config of introConfigs) {
@@ -1331,20 +1409,20 @@ export class PullupScene {
     try {
       const template = this.normalizeObject(
         await this.loadGlb(BOTTLE_MODEL_URL),
-        this.lowPower ? 0.28 : 0.36,
+        this.lowPower ? 0.42 : 0.52,
       )
 
       const bottleConfigs = this.lowPower
         ? [
-            { x: -0.78, y: 0.2, z: -3.22, rotY: 0.14, rotZ: -0.04, scale: 0.26, phase: 0.2 },
-            { x: 0.1, y: 0.46, z: -3.96, rotY: 0.02, rotZ: 0.02, scale: 0.3, phase: 0.8 },
-            { x: 0.98, y: 0.28, z: -4.72, rotY: -0.14, rotZ: 0.04, scale: 0.26, phase: 1.4 },
+            { x: -0.78, y: 0.2, z: -3.22, rotY: 0.14, rotZ: -0.04, scale: 0.34, phase: 0.2 },
+            { x: 0.1, y: 0.46, z: -3.96, rotY: 0.02, rotZ: 0.02, scale: 0.4, phase: 0.8 },
+            { x: 0.98, y: 0.28, z: -4.72, rotY: -0.14, rotZ: 0.04, scale: 0.34, phase: 1.4 },
           ]
         : [
-            { x: -1.18, y: 0.18, z: -3.08, rotY: 0.14, rotZ: -0.06, scale: 0.26, phase: 0.2 },
-            { x: -0.28, y: 0.42, z: -3.82, rotY: 0.06, rotZ: -0.02, scale: 0.28, phase: 0.75 },
-            { x: 0.68, y: 0.58, z: -4.56, rotY: -0.04, rotZ: 0.04, scale: 0.31, phase: 1.3 },
-            { x: 1.58, y: 0.26, z: -5.28, rotY: -0.14, rotZ: 0.06, scale: 0.26, phase: 1.9 },
+            { x: -1.18, y: 0.18, z: -3.08, rotY: 0.14, rotZ: -0.06, scale: 0.38, phase: 0.2 },
+            { x: -0.28, y: 0.42, z: -3.82, rotY: 0.06, rotZ: -0.02, scale: 0.42, phase: 0.75 },
+            { x: 0.68, y: 0.58, z: -4.56, rotY: -0.04, rotZ: 0.04, scale: 0.46, phase: 1.3 },
+            { x: 1.58, y: 0.26, z: -5.28, rotY: -0.14, rotZ: 0.06, scale: 0.38, phase: 1.9 },
           ]
 
       for (let index = 0; index < bottleConfigs.length; index += 1) {
@@ -1381,20 +1459,20 @@ export class PullupScene {
     try {
       const template = this.normalizeObject(
         await this.loadGlb(DISCO_BALL_MODEL_URL),
-        this.lowPower ? 0.52 : 0.68,
+        this.lowPower ? 0.66 : 0.84,
       )
 
       const discoConfigs = this.lowPower
         ? [
-            { x: -1.16, y: 1.26, z: -2.16, scale: 0.44, phase: 0.2 },
-            { x: 0.56, y: 0.88, z: -2.88, scale: 0.38, phase: 0.9 },
-            { x: 1.54, y: 1.38, z: -3.52, scale: 0.46, phase: 1.6 },
+            { x: -1.16, y: 1.26, z: -2.16, scale: 0.58, phase: 0.2 },
+            { x: 0.56, y: 0.88, z: -2.88, scale: 0.5, phase: 0.9 },
+            { x: 1.54, y: 1.38, z: -3.52, scale: 0.6, phase: 1.6 },
           ]
         : [
-            { x: -1.64, y: 1.38, z: -1.96, scale: 0.46, phase: 0.2 },
-            { x: -0.32, y: 0.82, z: -2.64, scale: 0.34, phase: 0.8 },
-            { x: 0.92, y: 1.12, z: -3.18, scale: 0.4, phase: 1.4 },
-            { x: 1.92, y: 1.48, z: -3.84, scale: 0.5, phase: 2 },
+            { x: -1.64, y: 1.38, z: -1.96, scale: 0.62, phase: 0.2 },
+            { x: -0.32, y: 0.82, z: -2.64, scale: 0.48, phase: 0.8 },
+            { x: 0.92, y: 1.12, z: -3.18, scale: 0.56, phase: 1.4 },
+            { x: 1.92, y: 1.48, z: -3.84, scale: 0.68, phase: 2 },
           ]
 
       for (let index = 0; index < discoConfigs.length; index += 1) {
