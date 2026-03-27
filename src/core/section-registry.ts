@@ -8,6 +8,9 @@ export interface SectionMetrics {
   progress: number
   visibility: number
   focus: number
+  progressCssValue: string
+  visibilityCssValue: string
+  focusCssValue: string
 }
 
 export class SectionRegistry {
@@ -24,6 +27,9 @@ export class SectionRegistry {
       progress: 0,
       visibility: 0,
       focus: 0,
+      progressCssValue: '',
+      visibilityCssValue: '',
+      focusCssValue: '',
     }))
   }
 
@@ -52,9 +58,24 @@ export class SectionRegistry {
       const maxDistance = (viewportHeight + item.height) * 0.5
       item.focus = clamp(1 - Math.abs(viewportCenter - itemCenter) / Math.max(maxDistance, 1), 0, 1)
 
-      item.element.style.setProperty('--section-progress', item.progress.toFixed(4))
-      item.element.style.setProperty('--section-visibility', item.visibility.toFixed(4))
-      item.element.style.setProperty('--section-focus', item.focus.toFixed(4))
+      const progressCssValue = item.progress.toFixed(4)
+      const visibilityCssValue = item.visibility.toFixed(4)
+      const focusCssValue = item.focus.toFixed(4)
+
+      if (progressCssValue !== item.progressCssValue) {
+        item.progressCssValue = progressCssValue
+        item.element.style.setProperty('--section-progress', progressCssValue)
+      }
+
+      if (visibilityCssValue !== item.visibilityCssValue) {
+        item.visibilityCssValue = visibilityCssValue
+        item.element.style.setProperty('--section-visibility', visibilityCssValue)
+      }
+
+      if (focusCssValue !== item.focusCssValue) {
+        item.focusCssValue = focusCssValue
+        item.element.style.setProperty('--section-focus', focusCssValue)
+      }
     }
   }
 

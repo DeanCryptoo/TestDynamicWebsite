@@ -285,6 +285,15 @@ canvas {
   will-change: transform;
 }
 
+.page-scroll[data-scroll-mode='native'] {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  min-height: 100vh;
+  will-change: auto;
+  transform: none !important;
+}
+
 .section {
   position: relative;
   width: min(1240px, calc(100vw - 5rem));
@@ -560,6 +569,11 @@ canvas {
     font-size: 16px;
   }
 
+  .ambient-wash,
+  .ambient-grain {
+    display: none;
+  }
+
   .site-header {
     flex-direction: column;
     align-items: flex-start;
@@ -580,6 +594,18 @@ canvas {
     padding: 7rem 0;
   }
 
+  .section::before {
+    display: none;
+  }
+
+  .brand-mark,
+  .hero__chips span,
+  .portal-step,
+  .system-card,
+  .launch-note {
+    backdrop-filter: none;
+  }
+
   .hero__title {
     font-size: clamp(2.8rem, 11vw, 4.8rem);
   }
@@ -591,5 +617,12 @@ canvas {
 
   .sequence-stage {
     display: none;
+  }
+
+  .portal,
+  .systems,
+  .sequence,
+  .launch {
+    min-height: auto;
   }
 }

@@ -5,6 +5,7 @@ import './pullup.css'
 import { PointerTracker } from '../core/pointer-tracker'
 import { SectionRegistry } from '../core/section-registry'
 import { SmoothScroll } from '../core/smooth-scroll'
+import { MOBILE_FRAME_INTERVAL } from '../core/runtime-profile'
 import { PullupController } from './pullup-controller'
 import { PullupScene } from './pullup-scene'
 
@@ -84,25 +85,25 @@ const SOCIALS = [
     label: 'Instagram',
     href: 'https://www.instagram.com/pullup_ofc/',
     handle: '@pullup_ofc',
-    note: 'Flyers, recap edits, and the main visual pulse of each city run.',
+    cue: 'Feed',
   },
   {
     label: 'TikTok',
     href: 'https://www.tiktok.com/@pullup.ofc',
     handle: '@pullup.ofc',
-    note: 'Fast-cut room energy, reactions, and the clips that keep the nights circulating.',
+    cue: 'Rushes',
   },
   {
     label: 'YouTube',
     href: 'https://www.youtube.com/@pullup_ofc',
     handle: '@pullup_ofc',
-    note: 'Longer-form aftermovies, artist moments, and campaign-ready edits.',
+    cue: 'Archive',
   },
   {
     label: 'Community',
     href: 'https://www.whatsapp.com/channel/0029Vb3YnJV35fM3V9GMNc0q',
     handle: 'WhatsApp line',
-    note: 'Direct drop alerts, early access, and the channel that keeps the scene close.',
+    cue: 'Line',
   },
 ]
 
@@ -310,15 +311,12 @@ export const mountPullupWorld = (app: HTMLDivElement): void => {
               ${SOCIALS.map(
                 (social, index) => `
                   <a class="pullup-social-card" href="${social.href}" target="_blank" rel="noreferrer">
-                    <div class="pullup-social-card__top">
-                      <span>0${index + 1}</span>
-                      <strong>${social.label}</strong>
+                    <div class="pullup-social-card__head">
+                      <span class="pullup-social-card__index">0${index + 1}</span>
+                      <span class="pullup-social-card__cue">${social.cue}</span>
                     </div>
-                    <p>${social.note}</p>
-                    <div class="pullup-social-card__foot">
-                      <span>${social.handle}</span>
-                      <span class="pullup-social-card__cta">Open</span>
-                    </div>
+                    <strong class="pullup-social-card__label">${social.label}</strong>
+                    <span class="pullup-social-card__handle">${social.handle}</span>
                   </a>
                 `,
               ).join('')}
@@ -362,10 +360,20 @@ export const mountPullupWorld = (app: HTMLDivElement): void => {
 
   let previous = performance.now()
   let time = 0
+  let frameCarry = 0
 
   const tick = (now: number): void => {
-    const deltaTime = Math.min(0.05, (now - previous) / 1000)
+    const elapsed = Math.min(0.05, (now - previous) / 1000)
     previous = now
+    frameCarry += elapsed
+
+    if (scroll.usesNativeScroll && frameCarry < MOBILE_FRAME_INTERVAL) {
+      window.requestAnimationFrame(tick)
+      return
+    }
+
+    const deltaTime = scroll.usesNativeScroll ? frameCarry : elapsed
+    frameCarry = 0
     time += deltaTime
 
     const pointerState = pointer.update(deltaTime)

@@ -182,6 +182,7 @@ const CHAPTERS: ChapterMeta[] = [
 export class DemoController {
   private readonly root = document.documentElement
   private readonly rootStyle = this.root.style
+  private readonly cssCache = new Map<string, string>()
   private readonly stage: HTMLElement
   private readonly stageCards: HTMLElement[]
   private readonly grid: HTMLElement
@@ -209,13 +210,13 @@ export class DemoController {
     const launch = this.sections.get('launch')?.progress ?? 0
     const cta = this.sections.get('cta')?.progress ?? 0
 
-    this.rootStyle.setProperty('--scroll-progress', scroll.progress.toFixed(4))
-    this.rootStyle.setProperty('--hero-progress', hero.toFixed(4))
-    this.rootStyle.setProperty('--portal-progress', portal.toFixed(4))
-    this.rootStyle.setProperty('--systems-progress', systems.toFixed(4))
-    this.rootStyle.setProperty('--sequence-progress', sequence.toFixed(4))
-    this.rootStyle.setProperty('--launch-progress', launch.toFixed(4))
-    this.rootStyle.setProperty('--cta-progress', cta.toFixed(4))
+    this.setRootVariable('--scroll-progress', scroll.progress.toFixed(4))
+    this.setRootVariable('--hero-progress', hero.toFixed(4))
+    this.setRootVariable('--portal-progress', portal.toFixed(4))
+    this.setRootVariable('--systems-progress', systems.toFixed(4))
+    this.setRootVariable('--sequence-progress', sequence.toFixed(4))
+    this.setRootVariable('--launch-progress', launch.toFixed(4))
+    this.setRootVariable('--cta-progress', cta.toFixed(4))
 
     this.updateStage(time, pointer, sequence, launch)
 
@@ -268,7 +269,7 @@ export class DemoController {
       dot.classList.toggle('is-past', dotIndex < activeIndex)
     }
 
-    this.rootStyle.setProperty('--chapter-progress', chapterProgress.toFixed(4))
+    this.setRootVariable('--chapter-progress', chapterProgress.toFixed(4))
   }
 
   private applyChapterMood(primary: ChapterMeta, secondary: ChapterMeta | null, mix: number): void {
@@ -321,8 +322,17 @@ export class DemoController {
     )
 
     for (const [property, value] of Object.entries(variables)) {
-      this.rootStyle.setProperty(property, value)
+      this.setRootVariable(property, value)
     }
+  }
+
+  private setRootVariable(property: string, value: string): void {
+    if (this.cssCache.get(property) === value) {
+      return
+    }
+
+    this.cssCache.set(property, value)
+    this.rootStyle.setProperty(property, value)
   }
 
   private updateStage(time: number, pointer: PointerState, sequence: number, launch: number): void {

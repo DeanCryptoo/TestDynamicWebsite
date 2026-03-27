@@ -119,6 +119,7 @@ const CHAPTERS: ChapterMeta[] = [
 export class PullupController {
   private readonly root = document.documentElement
   private readonly rootStyle = this.root.style
+  private readonly cssCache = new Map<string, string>()
   private readonly dots: HTMLElement[]
   private readonly sections: SectionRegistry
   private readonly moodBlendTracker = new ChapterBlendTracker(CHAPTER_IDS, 'intro')
@@ -135,10 +136,10 @@ export class PullupController {
   update({ deltaTime, scroll }: PullupUpdateInput): void {
     for (const id of CHAPTER_IDS) {
       const progress = this.sections.get(id)?.progress ?? 0
-      this.rootStyle.setProperty(`--pullup-${id}-progress`, progress.toFixed(4))
+      this.setRootVariable(`--pullup-${id}-progress`, progress.toFixed(4))
     }
 
-    this.rootStyle.setProperty('--pullup-scroll-progress', scroll.progress.toFixed(4))
+    this.setRootVariable('--pullup-scroll-progress', scroll.progress.toFixed(4))
 
     const chapterState = collectChapterState(CHAPTER_IDS, this.sections, {
       baselines: { intro: 0.02 },
@@ -225,7 +226,16 @@ export class PullupController {
     )
 
     for (const [property, value] of Object.entries(variables)) {
-      this.rootStyle.setProperty(property, value)
+      this.setRootVariable(property, value)
     }
+  }
+
+  private setRootVariable(property: string, value: string): void {
+    if (this.cssCache.get(property) === value) {
+      return
+    }
+
+    this.cssCache.set(property, value)
+    this.rootStyle.setProperty(property, value)
   }
 }

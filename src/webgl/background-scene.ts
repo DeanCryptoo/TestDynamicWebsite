@@ -1,4 +1,5 @@
 import {
+  ACESFilmicToneMapping,
   AdditiveBlending,
   AmbientLight,
   BoxGeometry,
@@ -182,10 +183,12 @@ export class BackgroundScene {
       canvas,
       antialias: !this.lowPower,
       alpha: true,
-      powerPreference: 'high-performance',
+      powerPreference: this.lowPower ? 'low-power' : 'high-performance',
     })
     this.renderer.outputColorSpace = SRGBColorSpace
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.lowPower ? 1 : 1.45))
+    this.renderer.toneMapping = ACESFilmicToneMapping
+    this.renderer.toneMappingExposure = this.lowPower ? 0.94 : 1.02
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.lowPower ? 0.8 : 1.45))
     this.renderer.setClearColor(0x000000, 0)
 
     this.scene.fog = new FogExp2('#efe6d6', this.lowPower ? 0.031 : 0.028)
@@ -226,7 +229,7 @@ export class BackgroundScene {
   resize(width: number, height: number): void {
     this.camera.aspect = width / Math.max(height, 1)
     this.camera.updateProjectionMatrix()
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.lowPower ? 1 : 1.45))
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.lowPower ? 0.8 : 1.45))
     this.renderer.setSize(width, height, false)
   }
 
@@ -706,7 +709,7 @@ export class BackgroundScene {
   }
 
   private createDust(): void {
-    const count = this.lowPower ? 1400 : 2600
+    const count = this.lowPower ? 720 : 2600
     this.dustBase = new Float32Array(count * 3)
     this.dustPositions = new Float32Array(count * 3)
     const colors = new Float32Array(count * 3)

@@ -70,6 +70,25 @@ export interface FanOffsetConfig {
   curve?: number
 }
 
+export interface TimelineEnvelopeConfig {
+  easeIn?: (value: number) => number
+  easeOut?: (value: number) => number
+  fadeInEnd?: number
+  fadeInStart?: number
+  fadeOutEnd?: number
+  fadeOutStart?: number
+  min?: number
+}
+
+export interface PulseValueConfig {
+  amplitude?: number
+  base?: number
+  ease?: (value: number) => number
+  frequency?: number
+  phase?: number
+  progressGain?: number
+}
+
 const createRecord = <Id extends string>(ids: readonly Id[], initial: number): Record<Id, number> => {
   const record = {} as Record<Id, number>
   for (const id of ids) {
@@ -166,6 +185,31 @@ export const createFanOffset = (
     Math.pow(Math.abs(normalized) * 2, Math.max(config.curve ?? 1, 0.2))
 
   return curved * (config.spread ?? 1) * local
+}
+
+export const createTimelineEnvelope = (
+  progress: number,
+  config: TimelineEnvelopeConfig = {},
+): number => {
+  const enter = remapClamped(progress, config.fadeInStart ?? 0, config.fadeInEnd ?? 0.18, 0, 1)
+  const exit = 1 - remapClamped(progress, config.fadeOutStart ?? 1.01, config.fadeOutEnd ?? 1.01, 0, 1)
+  const entered = config.easeIn ? config.easeIn(enter) : enter
+  const exited = config.easeOut ? config.easeOut(exit) : exit
+  const envelope = Math.min(entered, exited)
+  const minimum = config.min ?? 0
+  return minimum + (1 - minimum) * envelope
+}
+
+export const createPulseValue = (
+  time: number,
+  progress: number,
+  config: PulseValueConfig = {},
+): number => {
+  const gain =
+    (config.base ?? 0.6) +
+    (config.progressGain ?? 0.4) * (config.ease ? config.ease(progress) : progress)
+  const pulse = (Math.sin(time * (config.frequency ?? 1) + (config.phase ?? 0)) + 1) * 0.5
+  return gain * (pulse * (config.amplitude ?? 1))
 }
 
 export const collectChapterState = <Id extends string>(

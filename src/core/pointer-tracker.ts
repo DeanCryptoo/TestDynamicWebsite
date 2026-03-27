@@ -1,4 +1,5 @@
 import { damp } from './math'
+import { isLowPowerDevice } from './runtime-profile'
 
 export interface PointerState {
   x: number
@@ -8,6 +9,8 @@ export interface PointerState {
 }
 
 export class PointerTracker {
+  private readonly enabled = !isLowPowerDevice()
+
   readonly state: PointerState = {
     x: 0,
     y: 0,
@@ -16,11 +19,19 @@ export class PointerTracker {
   }
 
   constructor() {
+    if (!this.enabled) {
+      return
+    }
+
     window.addEventListener('pointermove', this.handlePointerMove, { passive: true })
     window.addEventListener('pointerleave', this.handlePointerLeave)
   }
 
   update(deltaTime: number): PointerState {
+    if (!this.enabled) {
+      return this.state
+    }
+
     this.state.x = damp(this.state.x, this.state.targetX, 7, deltaTime)
     this.state.y = damp(this.state.y, this.state.targetY, 7, deltaTime)
     return this.state

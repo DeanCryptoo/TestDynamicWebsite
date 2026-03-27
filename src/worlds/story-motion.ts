@@ -6,6 +6,7 @@ import { DemoController } from '../demo/demo-controller'
 import { PointerTracker } from '../core/pointer-tracker'
 import { SectionRegistry } from '../core/section-registry'
 import { SmoothScroll } from '../core/smooth-scroll'
+import { MOBILE_FRAME_INTERVAL } from '../core/runtime-profile'
 import { BackgroundScene } from '../webgl/background-scene'
 
 export const mountStoryMotionWorld = (app: HTMLDivElement): void => {
@@ -218,10 +219,20 @@ story.update({ time, pointer, scroll })</code></pre>
 
   let previous = performance.now()
   let time = 0
+  let frameCarry = 0
 
   const tick = (now: number): void => {
-    const deltaTime = Math.min(0.05, (now - previous) / 1000)
+    const elapsed = Math.min(0.05, (now - previous) / 1000)
     previous = now
+    frameCarry += elapsed
+
+    if (scroll.usesNativeScroll && frameCarry < MOBILE_FRAME_INTERVAL) {
+      window.requestAnimationFrame(tick)
+      return
+    }
+
+    const deltaTime = scroll.usesNativeScroll ? frameCarry : elapsed
+    frameCarry = 0
     time += deltaTime
 
     const pointerState = pointer.update(deltaTime)
